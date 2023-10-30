@@ -1,101 +1,37 @@
-#include <stdio.h>
 #include <CL/cl.h>
+#include <stdio.h>
 
-#define NWITEMS 512
+int main(void) {
+    cl_uint numPlatforms;
+    clGetPlatformIDs(0, NULL, &numPlatforms);
 
-const char *source = 
-"kernel void memset(   global uint *dst )             \n"
-"{                                                    \n"
-"    dst[get_global_id(0)] = get_global_id(0);        \n"
-"}                                                    \n";
-
-
-
-int main(int argc, char **argv) {
-    cl_platform_id platform;
-    clGetPlatformIDs( 1, &platform, NULL );
-
-    cl_device_id device;
-    clGetDeviceIDs(
-            platform,
-            CL_DEVICE_TYPE_GPU,
-            1,
-            &device,
-            NULL
-            );
+    cl_platform_id* platforms = (cl_platform_id*)malloc(numPlatforms * sizeof(cl_platform_id));
+    clGetPlatformIDs(numPlatforms, platforms, NULL);
     
-    cl_context context = clCreateContext(
-            NULL,
-            1,
-            &device,
-            NULL,
-            NULL,
-            NULL
-            );
+    for (cl_uint i = 0; i < numPlatforms; i++) {
+        printf("Platform %d:\n", i + 1);
 
-    cl_command_queue queue = clCreateCommandQueue(
-            context,
-            device,
-            0,
-            NULL
-            );
+        char platformName[128];
+        clGetPlatformInfo(platforms[i], CL_PLATFORM_NAME, sizeof(platformName), platformName, NULL);
+        printf("  Name: %s\n", platformName);
 
-    cl_program program = clCreateProgramWithSource(
-            context,
-            1,
-            &source,
-            NULL,
-            NULL
-            );
-    
-    clBuildProgram( program, 1, &device, NULL, NULL, NULL );
-    cl_kernel kernel = clCreateKernel( program, "memset", NULL );
-    
-    cl_mem buffer = clCreateBuffer(
-            context,
-            CL_MEM_WRITE_ONLY,
-            NWITEMS * sizeof(cl_uint),
-            NULL,
-            NULL
-            );
-    
+        cl_uint numDevices;
+        clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, 0, NULL, &numDevices);
 
-    size_t global_work_size = NWITEMS;
-    clSetKernelArg(kernel, 0, sizeof(buffer), (void*) &buffer);
-    
-    clEnqueueNDRangeKernel(
-            queue,
-            kernel,
-            1,
-            NULL,
-            &global_work_size,
-            NULL,
-            0,
-            NULL,
-            NULL
-            );
+        cl_device_id* devices = (cl_device_id*)malloc(numDevices * sizeof(cl_device_id));
+        clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, numDevices, devices, NULL);
 
-    clFinish( queue );
+        for (cl_uint j = 0; j < numDevices; j++) {
+            printf("  Device %d:\n", j + 1);
+            char deviceName[128];
+            clGetDeviceInfo(devices[j], CL_DEVICE_NAME, sizeof(deviceName), deviceName, NULL);
+            printf("    Name: %s\n", deviceName);
+        }
 
-    cl_uint *ptr;
-
-    ptr = (cl_uint *) clEnqueueMapBuffer(
-            queue,
-            buffer,
-            CL_TRUE,
-            CL_MAP_READ,
-            0,
-            NWITEMS * sizeof(cl_uint),
-            0,
-            NULL,
-            NULL,
-            NULL
-            );
-    
-    for (unsigned i=0; i < NWITEMS; i++) {
-        printf("%d %d\n", i, ptr[i]);
+        free(devices);
     }
+
+    free(platforms);
 
     return 0;
 }
-
