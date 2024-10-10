@@ -1,4 +1,3 @@
-Introduction
-============
+## Introduction
 Using OpenCL API directly, make a run through OpenCL platforms
-and print to stdout all devices for each platform.
+and print all devices to stdout for each platform.

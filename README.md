@@ -1,4 +1,2 @@
-Computer Science Center OpenCL tasks
-====================================
-I provide every task description as I understand it from lecturer and sample
-solution
+## Computer Science Center OpenCL tasks
+Addition for OpenCL course, task descriptions and sample solutions
